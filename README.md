@@ -1,46 +1,87 @@
 # Returns Automation Agent
 
-## Setup
+## What this is
+A script (RPA — not an AI agent, no LLM, no API key) that reads pending
+return requests from an Excel file, is meant to place those returns on
+Amazon/Flipkart, and writes the result back into the same Excel row.
+
+## Why this exists
+Doing e-commerce returns by hand — click into each order, pick a reason,
+confirm, note the result — is repetitive and slow when there are many
+orders. This script automates the repetitive part: reading the task list,
+driving the browser, and logging what happened, so a human doesn't have
+to do each step manually.
+
+## Current state — read this before assuming it's "done"
+- The Excel read/write, task tracking, and per-item logic all work.
+- The actual clicking on Amazon/Flipkart is **not built yet** — the
+  selectors in `platforms/amazon.py` and `platforms/flipkart.py` are
+  placeholders. Running it right now writes fake data (`PLACEHOLDER-*`)
+  instead of doing anything real on either site.
+- To make it real: inspect an actual logged-in order page on each site,
+  replace the placeholder selectors, replace the eligibility-check stub.
+
+## What you need installed
 ```
 pip install -r requirements.txt
 playwright install chromium
 ```
 
-## 1. Capture an authenticated session (once per platform)
+## One-time setup: log in
 ```
 python capture_login_session.py amazon
 python capture_login_session.py flipkart
 ```
-This opens a real browser, you log in manually (OTP included), and the
-session is saved to `auth_state/<platform>.json`. Re-run whenever a session
-expires or gets logged out. No credential is ever stored in code or in Excel.
+Opens a real browser, you log in manually (OTP included), it saves the
+session to `auth_state/`. The script itself never touches a login form or
+stores a password — re-run this only when a session expires.
 
-## 2. Prepare `returns_tasks.xlsx`
-Sheet name: `Tasks`. Header row, one line item per row:
+## What to put in Excel before running
+File: `returns_tasks.xlsx`, in the same folder as `main.py`.
 
-`Platform | OrderID | SKU | ReturnWindow | ReturnID | ReturnStatus | RefundAmount | TaskStatus | Timestamp | ErrorNote`
+Header row, any of these column names work (spacing/casing flexible):
 
-Leave `ReturnID`, `ReturnStatus`, `RefundAmount`, `Timestamp`, `ErrorNote` blank.
-Set `TaskStatus` to `To Do` for rows the agent should process.
+| Column | What goes in it | Who fills it |
+|---|---|---|
+| Platform | `Amazon` or `Flipkart` | you |
+| OrderID | the order number | you |
+| SKU | product/SKU name | you |
+| ReturnWindow | e.g. `15 days` | you |
+| TaskStatus | `To Do` | you |
+| ReturnID | leave blank | script |
+| ReturnStatus | leave blank | script |
+| RefundAmount | leave blank | script |
+| Timestamp | leave blank | script |
+| ErrorNote | leave blank (optional column) | script |
 
-## 3. Run
-```
-python main.py
-```
-Processes every pending line item, writes results back to the same Excel file
-row by row, groups line items by order so partial-order failures don't block
-unrelated items.
+One row per line item — if an order has 3 products, that's 3 rows, same
+OrderID, different SKU. Set `TaskStatus` to `To Do` on every row you want
+processed. The script skips rows already marked `Done` or anything other
+than `To Do` / `Pending`.
 
-## Before this touches real orders
-- Fill in the real selectors in `platforms/amazon.py` / `platforms/flipkart.py`
-  — the current ones are placeholders (marked `TODO`), built without access to
-  a live logged-in session on either site.
-- Confirm Amazon's actual flow type (see `FEEDBACK.md` item 1) — currently set
-  to `sequential`, unverified against the real UI.
-- Get sign-off that automated return submission is allowed under both
-  platforms' terms of service for this account. This is a business/legal
-  question, not something the code resolves.
-- Test against a handful of real orders manually before pointing it at a full
-  queue — especially the "out of window" and duplicate-submission detection
-  logic, which is stubbed (`if False:`) pending real page content to check
-  against.
+## How to run
+1. Close `returns_tasks.xlsx` in Excel first — Windows locks the file
+   while it's open, and the script can't save results into a locked file.
+2. Run:
+   ```
+   python main.py
+   ```
+3. Reopen the Excel file to see results per row.
+
+## What happens when it runs
+- Reads every row marked `To Do`.
+- Groups rows by order, so multi-item orders are handled together.
+- For each row: opens the platform, attempts the return, writes back
+  `ReturnID` / `ReturnStatus` / `RefundAmount` / `TaskStatus` / `Timestamp`.
+- If one item in an order fails, the others still get processed — one bad
+  item doesn't block the rest of the order.
+- If a platform shows a CAPTCHA or verification challenge, that row is
+  marked `Needs human review` instead of the script trying to solve it.
+
+## Before pointing this at real orders
+- Fill in the real selectors (see "Current state" above).
+- Confirm Amazon's actual return flow (batch vs. per-item) — the spec
+  document this was built from contradicted itself on this point.
+- Get confirmation that automating returns this way doesn't violate
+  Amazon/Flipkart's terms of service for the account being used — that's
+  a business decision, not something this script resolves.
