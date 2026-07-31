@@ -12,14 +12,6 @@ orders. This script automates the repetitive part: reading the task list,
 driving the browser, and logging what happened, so a human doesn't have
 to do each step manually.
 
-## Current state — read this before assuming it's "done"
-- The Excel read/write, task tracking, and per-item logic all work.
-- The actual clicking on Amazon/Flipkart is **not built yet** — the
-  selectors in `platforms/amazon.py` and `platforms/flipkart.py` are
-  placeholders. Running it right now writes fake data (`PLACEHOLDER-*`)
-  instead of doing anything real on either site.
-- To make it real: inspect an actual logged-in order page on each site,
-  replace the placeholder selectors, replace the eligibility-check stub.
 
 ## What you need installed
 ```
