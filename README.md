@@ -85,3 +85,8 @@ than `To Do` / `Pending`.
 - Get confirmation that automating returns this way doesn't violate
   Amazon/Flipkart's terms of service for the account being used — that's
   a business decision, not something this script resolves.
+
+## Repo contents
+This repo also contains the SQL assignment answers and charts for the
+FAYM task, in addition to the returns automation agent above.
+
