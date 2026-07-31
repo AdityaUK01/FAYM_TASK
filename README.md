@@ -70,13 +70,7 @@ than `To Do` / `Pending`.
 - If a platform shows a CAPTCHA or verification challenge, that row is
   marked `Needs human review` instead of the script trying to solve it.
 
-## Before pointing this at real orders
-- Fill in the real selectors (see "Current state" above).
-- Confirm Amazon's actual return flow (batch vs. per-item) — the spec
-  document this was built from contradicted itself on this point.
-- Get confirmation that automating returns this way doesn't violate
-  Amazon/Flipkart's terms of service for the account being used — that's
-  a business decision, not something this script resolves.
+
 
 ## Repo contents
 This repo also contains the SQL assignment answers and charts for the
